@@ -23,6 +23,7 @@ function App() {
     const [depositUsdcAmount, setDepositUsdcAmount] = useState(0);
     const [withdrawUsdcAmount, setWithdrawUsdcAmount] = useState(0);
     const [withdrawStorageAmount, setWithdrawStorageAmount] = useState(0);
+    const [tradingKeys, setTradingKeys] = useState(null);
 
     const handleConnect = async() => {
       setIsConnecting(true);
@@ -30,7 +31,7 @@ function App() {
         networkId: 'testnet',
         contractId: 'asset-manager.orderly.testnet',
         debug: true
-    });
+      });
       await authClient?.connect()
       setSDK(authClient);
       const api = await authClient.restApi()
@@ -47,6 +48,13 @@ function App() {
     const handleLogAccountId = async () => {
       const response = await sdk.accountId();
       setAccountId(response)
+    }
+
+    const handleGenerateTradingKey = () => {
+      const response = sdk.generateTradingKey()
+      console.log('Trading Keys: ', response)
+      const { keyPair, ...keys } = response;
+      setTradingKeys(keys)
     }
 
     const createOrder = async () => {
@@ -287,6 +295,20 @@ function App() {
             </CardBody>
             <CardFooter>
               <Button onClick={withdrawStorage}>Withdraw</Button>
+            </CardFooter>
+          </Card>
+
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                Generate Trading Key
+              </Text>
+            </CardHeader>
+            <CardBody>
+              {tradingKeys && `Look in console!`}
+            </CardBody>
+            <CardFooter>
+              <Button onClick={handleGenerateTradingKey}>Generate</Button>
             </CardFooter>
           </Card>
           </div>
