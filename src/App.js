@@ -9,6 +9,7 @@ function App() {
     const [balance, setBalance] = useState(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [sdk, setSDK] = useState(null);
+    const [wsClient, setWsClient] = useState(null);
     const [apiClient, setApiClient] = useState(null);
     const [contractClient, setContractClient] = useState(null);
     const [ftClient, setFtClient] = useState(null);
@@ -37,8 +38,19 @@ function App() {
       const api = await authClient.restApi()
       const contract = await authClient.contractsApi();
       const ft = await authClient.ftClient();
+      const ws = await authClient.wsClient();
+      ws.connect();
+
+      await ws.connectPrivate()
+      
+      ws.setMessageCallback((message) => {
+        // Process the received message
+        console.log('Received data:', message);
+      });
+
       console.log(authClient.accountId())
       setApiClient(api)
+      setWsClient(ws);
       setContractClient(contract)
       setFtClient(ft)
       setIsConnecting(false)
@@ -146,6 +158,20 @@ function App() {
     const getBalance = async () => {
       const userBalance = await contractClient.getUserTokenBalance()
       setBalance(userBalance)
+    }
+
+    const subscribe = () => {
+      const subscription = { id: 'client_id1', event: 'subscribe', topic: 'SPOT_WOO_USDC@trade' };
+      wsClient.sendSubscription(subscription);
+    }
+
+    const subscribePrivate = () => {
+      const subscription = {
+        "id": "123r",
+        "topic": "balance",
+        "event": "subscribe"
+      }
+      wsClient.sendPrivateSubscription(subscription);
     }
 
   return (
@@ -309,6 +335,32 @@ function App() {
             </CardBody>
             <CardFooter>
               <Button onClick={handleGenerateTradingKey}>Generate</Button>
+            </CardFooter>
+          </Card>
+
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                WS subscribe
+              </Text>
+            </CardHeader>
+            <CardBody>
+            </CardBody>
+            <CardFooter>
+              <Button onClick={subscribe}>subscribe</Button>
+            </CardFooter>
+          </Card>
+
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                WS subscribe private
+              </Text>
+            </CardHeader>
+            <CardBody>
+            </CardBody>
+            <CardFooter>
+              <Button onClick={subscribePrivate}>subscribe</Button>
             </CardFooter>
           </Card>
           </div>
