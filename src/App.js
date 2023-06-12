@@ -9,7 +9,8 @@ function App() {
     const [balance, setBalance] = useState(null);
     const [isConnecting, setIsConnecting] = useState(false);
     const [sdk, setSDK] = useState(null);
-    const [wsClient, setWsClient] = useState(null);
+    const [wsClientPublic, setWsClientPublic] = useState(null);
+    const [wsClientPrivate, setWsClientPrivate] = useState(null);
     const [apiClient, setApiClient] = useState(null);
     const [contractClient, setContractClient] = useState(null);
     const [ftClient, setFtClient] = useState(null);
@@ -26,6 +27,19 @@ function App() {
     const [withdrawStorageAmount, setWithdrawStorageAmount] = useState(0);
     const [tradingKeys, setTradingKeys] = useState(null);
 
+    const initPublicWs = () => {
+      const authClient = new AuthClient({
+        networkId: 'testnet',
+        contractId: 'asset-manager.orderly.testnet',
+        debug: true
+      });
+
+      const wsPublic = authClient.wsClientPublic('testnet', 'bf6eb263984c964a0cda3e9a35aa486268eea085d9b90fe792c8f9ad7e129a2c');
+      wsPublic.connect();
+      setWsClientPublic(wsPublic)
+      
+    }
+
     const handleConnect = async() => {
       setIsConnecting(true);
       const authClient = new AuthClient({
@@ -38,19 +52,18 @@ function App() {
       const api = await authClient.restApi()
       const contract = await authClient.contractsApi();
       const ft = await authClient.ftClient();
-      const ws = await authClient.wsClient();
-      ws.connect();
-
-      await ws.connectPrivate()
+      const ws = await authClient.wsClientPrivate();
+      await ws.connectPrivate();
       
-      ws.setMessageCallback((message) => {
+      ws.setPrivateMessageCallback((message) => {
         // Process the received message
         console.log('Received data:', message);
       });
 
       console.log(authClient.accountId())
+      setAccountId(authClient.accountId())
       setApiClient(api)
-      setWsClient(ws);
+      setWsClientPrivate(ws);
       setContractClient(contract)
       setFtClient(ft)
       setIsConnecting(false)
@@ -102,6 +115,20 @@ function App() {
       if (depositNearAmount) {
         const response = await contractClient.depositNEAR(depositNearAmount)
         setDepositNearAmountResponse(response)
+      }
+    }
+
+    const storageBalanceOf = async () => {
+      if (accountId) {
+        const response = await contractClient.storageBalanceOf(accountId)
+        console.log(response)
+      }
+    }
+
+    const storageUsageOf = async () => {
+      if (accountId) {
+        const response = await contractClient.storageUsageOf(accountId)
+        console.log(response)
       }
     }
 
@@ -162,7 +189,7 @@ function App() {
 
     const subscribe = () => {
       const subscription = { id: 'client_id1', event: 'subscribe', topic: 'SPOT_WOO_USDC@trade' };
-      wsClient.sendSubscription(subscription);
+      wsClientPublic.sendSubscription(subscription);
     }
 
     const subscribePrivate = () => {
@@ -171,7 +198,7 @@ function App() {
         "topic": "balance",
         "event": "subscribe"
       }
-      wsClient.sendPrivateSubscription(subscription);
+      wsClientPrivate.sendPrivateSubscription(subscription);
     }
 
   return (
@@ -185,6 +212,19 @@ function App() {
           isConnecting ? 'Connections' : !connected ? 'Connect Wallet' : 'Sign Out'
         }</Button>
       </header>
+      <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                WS subscribe
+              </Text>
+            </CardHeader>
+            <CardBody>
+            </CardBody>
+            <CardFooter>
+              <Button onClick={initPublicWs}>Init public ws connection</Button>
+              <Button onClick={subscribe}>subscribe</Button>
+            </CardFooter>
+      </Card>
       {connected && (
           <div className="bodyWrapper">
           <div className="row">
@@ -341,19 +381,6 @@ function App() {
           <Card maxW='sm' style={{marginLeft: 20}}>
             <CardHeader>
               <Text fontSize='xl'>
-                WS subscribe
-              </Text>
-            </CardHeader>
-            <CardBody>
-            </CardBody>
-            <CardFooter>
-              <Button onClick={subscribe}>subscribe</Button>
-            </CardFooter>
-          </Card>
-
-          <Card maxW='sm' style={{marginLeft: 20}}>
-            <CardHeader>
-              <Text fontSize='xl'>
                 WS subscribe private
               </Text>
             </CardHeader>
@@ -361,6 +388,30 @@ function App() {
             </CardBody>
             <CardFooter>
               <Button onClick={subscribePrivate}>subscribe</Button>
+            </CardFooter>
+          </Card>
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                Log storage balance
+              </Text>
+            </CardHeader>
+            <CardBody>
+            </CardBody>
+            <CardFooter>
+              <Button onClick={storageBalanceOf}>storageBalanceOf</Button>
+            </CardFooter>
+          </Card>
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                Log storage usage
+              </Text>
+            </CardHeader>
+            <CardBody>
+            </CardBody>
+            <CardFooter>
+              <Button onClick={storageUsageOf}>storageUsageOf</Button>
             </CardFooter>
           </Card>
           </div>
