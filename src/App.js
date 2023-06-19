@@ -26,6 +26,7 @@ function App() {
     const [withdrawUsdcAmount, setWithdrawUsdcAmount] = useState(0);
     const [withdrawStorageAmount, setWithdrawStorageAmount] = useState(0);
     const [tradingKeys, setTradingKeys] = useState(null);
+    const [publicClient, setPublicClient] = useState(null);
 
     const initPublicWs = () => {
       const authClient = new AuthClient({
@@ -52,6 +53,7 @@ function App() {
       const api = await authClient.restApi()
       const contract = await authClient.contractsApi();
       const ft = await authClient.ftClient();
+      const pub = await authClient.publicClient();
       const ws = await authClient.wsClientPrivate();
       await ws.connectPrivate();
       
@@ -65,6 +67,7 @@ function App() {
       setApiClient(api)
       setWsClientPrivate(ws);
       setContractClient(contract)
+      setPublicClient(pub)
       setFtClient(ft)
       setIsConnecting(false)
       setConnected(true)
@@ -161,26 +164,26 @@ function App() {
       setConnected(false);
     }
 
-    const publicClient = async () => {
-      // const authClient = new AuthClient({
-      //   networkId: 'testnet',
-      //   contractId: 'asset-manager.orderly.testnet',
-      //   debug: true
-      // });
-      // console.log(authClient)
-      // const pubClient = authClient.publicClient();
-      // const available = await pubClient.getAvailableSymbols()
-      // console.log(available)
+    // const publicClient = async () => {
+    //   // const authClient = new AuthClient({
+    //   //   networkId: 'testnet',
+    //   //   contractId: 'asset-manager.orderly.testnet',
+    //   //   debug: true
+    //   // });
+    //   // console.log(authClient)
+    //   // const pubClient = authClient.publicClient();
+    //   // const available = await pubClient.getAvailableSymbols()
+    //   // console.log(available)
 
-      const authClient = new AuthClient({
-        networkId: 'testnet',
-        contractId: 'asset-manager.orderly.testnet',
-        debug: true
-      });
+    //   const authClient = new AuthClient({
+    //     networkId: 'testnet',
+    //     contractId: 'asset-manager.orderly.testnet',
+    //     debug: true
+    //   });
 
-      const api = authClient.nearJsApi
-      console.log(api)
-    }
+    //   const api = authClient.nearJsApi
+    //   console.log(api)
+    // }
 
     const getBalance = async () => {
       const userBalance = await contractClient.getUserTokenBalance()
@@ -199,6 +202,21 @@ function App() {
         "event": "subscribe"
       }
       wsClientPrivate.sendPrivateSubscription(subscription);
+    }
+
+    const getFundingRateHistoryForOneMarket = async () => {
+      const response = await publicClient.getFundingRateHistoryForOneMarket({symbol: 'PERP_BTC_USDC', page: 1, size: 5})
+      console.log(response)
+    }
+
+    const getFundingFeeHistory = async () => {
+      const response = await apiClient.trade.getFundingFeeHistory({symbol: 'PERP_BTC_USDC', page: 1, size: 5});
+      console.log(response)
+    }
+
+    const userRequestSettlement = async () => {
+      const response = await contractClient.userRequestSettlement();
+      console.log(response)
     }
 
   return (
@@ -412,6 +430,32 @@ function App() {
             </CardBody>
             <CardFooter>
               <Button onClick={storageUsageOf}>storageUsageOf</Button>
+            </CardFooter>
+          </Card>
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                [PERP] getFundingRateHistoryForOneMarket
+              </Text>
+            </CardHeader>
+            <CardBody>
+            </CardBody>
+            <CardFooter>
+              <Button onClick={getFundingRateHistoryForOneMarket}>getFundingRateHistoryForOneMarket</Button>
+            </CardFooter>
+          </Card>
+
+          <Card maxW='sm' style={{marginLeft: 20}}>
+            <CardHeader>
+              <Text fontSize='xl'>
+                [PERP]
+              </Text>
+            </CardHeader>
+            <CardBody>
+              <Button onClick={getFundingFeeHistory}>getFundingFeeHistory</Button>
+              <Button onClick={userRequestSettlement}>userRequestSettlement</Button>
+            </CardBody>
+            <CardFooter>
             </CardFooter>
           </Card>
           </div>
